@@ -1,0 +1,92 @@
+name: Build Amnezia VPN 4.8.12.8 on Ubuntu 22.04
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux-ubuntu-2204:
+    name: Build Linux x64 on ubuntu-22.04
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    env:
+      QT_VERSION: 6.8.3
+      QIF_VERSION: 4.7
+      QT_MIRROR: https://mirrors.ocf.berkeley.edu/qt/
+      # Upstream CMake reads these macros; empty values are acceptable for a generic build.
+      PROD_AGW_PUBLIC_KEY: ""
+      PROD_S3_ENDPOINT: ""
+      DEV_AGW_PUBLIC_KEY: ""
+      DEV_AGW_ENDPOINT: ""
+      DEV_S3_ENDPOINT: ""
+      FREE_V2_ENDPOINT: ""
+      PREM_V1_ENDPOINT: ""
+
+    steps:
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          modules: qtremoteobjects qt5compat qtshadertools
+          tools: tools_ifw
+          dir: ${{ runner.temp }}
+          setup-python: true
+          set-env: true
+          aqtversion: '==3.3.0'
+          py7zrversion: '==0.22.*'
+          extra: '--base ${{ env.QT_MIRROR }}'
+
+      - name: Checkout Amnezia source tag 4.8.12.8
+        uses: actions/checkout@v4
+        with:
+          repository: amnezia-vpn/amnezia-client
+          ref: 4.8.12.8
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Build and pack installer
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libxkbcommon-x11-0 p7zip-full zip file binutils patchelf
+          echo "glibc on runner:"; ldd --version | head -1
+          echo "source commit:"; git rev-parse HEAD
+          grep 'set(AMNEZIAVPN_VERSION' CMakeLists.txt
+          export QT_BIN_DIR="${{ runner.temp }}/Qt/${{ env.QT_VERSION }}/gcc_64/bin"
+          export QIF_BIN_DIR="${{ runner.temp }}/Qt/Tools/QtInstallerFramework/${{ env.QIF_VERSION }}/bin"
+          bash deploy/build_linux.sh
+          VERSION=$(grep 'set(AMNEZIAVPN_VERSION' CMakeLists.txt | sed -E 's/.*AMNEZIAVPN_VERSION ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\).*/\1/')
+          cd deploy
+          tar -cf AmneziaVPN_Linux_Installer.tar AmneziaVPN_Linux_Installer.bin
+          zip -9 AmneziaVPN_${VERSION}_Ubuntu_22.04_x64.tar.zip AmneziaVPN_Linux_Installer.tar
+          cd ..
+
+      - name: Verify Ubuntu 22.04 glibc compatibility
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SERVICE=deploy/AppDir/service/bin/AmneziaVPN-service
+          file "$SERVICE"
+          objdump -p "$SERVICE" | tee service-objdump.txt
+          if grep -E 'GLIBC_2\.(3[6-9]|[4-9][0-9])' service-objdump.txt; then
+            echo "Found glibc symbols newer than Ubuntu 22.04 glibc 2.35" >&2
+            exit 1
+          fi
+          unzip -t deploy/AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64.tar.zip
+          sha256sum deploy/AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64.tar.zip deploy/AmneziaVPN_Linux_Installer.bin deploy/AppDir/service/bin/AmneziaVPN-service | tee SHA256SUMS.ubuntu2204
+
+      - name: Upload Ubuntu 22.04 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64
+          path: |
+            deploy/AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64.tar.zip
+            SHA256SUMS.ubuntu2204
+            service-objdump.txt
+          retention-days: 7
