@@ -1,6 +1,8 @@
 # Amnezia VPN 4.8.12.8 — Ubuntu 22.04 x64 distribution
 
-Публичная публикация Linux x64 дистрибутива Amnezia VPN `4.8.12.8` для Ubuntu 22.04.
+Публичная публикация Linux x64 дистрибутива Amnezia VPN `4.8.12.8`.
+
+> ⚠️ Compatibility note: the initially mirrored upstream binary was later found to require `GLIBC_2.38`, while Ubuntu 22.04 ships glibc `2.35`. On Ubuntu 22.04 this can crash `AmneziaVPN-service` at startup. Use Ubuntu 24.04 for this binary, or rebuild Amnezia from source on Ubuntu 22.04/glibc 2.35.
 
 ## Source verification
 
@@ -21,7 +23,7 @@
 - `SHA256SUMS` — checksum installer file
 - `README_UBUNTU_22.04_RU.txt` — локальная инструкция установки
 
-## Install on Ubuntu 22.04 x86_64
+## Install / compatibility
 
 ```bash
 unzip -t AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64_distribution.zip
