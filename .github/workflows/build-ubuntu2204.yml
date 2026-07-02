@@ -15,7 +15,6 @@ jobs:
       QT_VERSION: 6.8.3
       QIF_VERSION: 4.7
       QT_MIRROR: https://mirrors.ocf.berkeley.edu/qt/
-      # Upstream CMake reads these macros; empty values are acceptable for a generic build.
       PROD_AGW_PUBLIC_KEY: ""
       PROD_S3_ENDPOINT: ""
       DEV_AGW_PUBLIC_KEY: ""
@@ -58,6 +57,14 @@ jobs:
           echo "glibc on runner:"; ldd --version | head -1
           echo "source commit:"; git rev-parse HEAD
           grep 'set(AMNEZIAVPN_VERSION' CMakeLists.txt
+          # GitHub hosted runner can OOM with upstream unbounded `cmake --build . -j`.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('deploy/build_linux.sh')
+          s = p.read_text()
+          s = s.replace('cmake --build . -j --config release', 'cmake --build . -j2 --config release')
+          p.write_text(s)
+          PY
           export QT_BIN_DIR="${{ runner.temp }}/Qt/${{ env.QT_VERSION }}/gcc_64/bin"
           export QIF_BIN_DIR="${{ runner.temp }}/Qt/Tools/QtInstallerFramework/${{ env.QIF_VERSION }}/bin"
           bash deploy/build_linux.sh
