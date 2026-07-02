@@ -1,34 +1,33 @@
 # Amnezia VPN 4.8.12.8 — Ubuntu 22.04 x64 distribution
 
-Публичная публикация Linux x64 дистрибутива Amnezia VPN `4.8.12.8`.
-
-> ⚠️ Compatibility note: the initially mirrored upstream binary was later found to require `GLIBC_2.38`, while Ubuntu 22.04 ships glibc `2.35`. On Ubuntu 22.04 this can crash `AmneziaVPN-service` at startup. Use Ubuntu 24.04 for this binary, or rebuild Amnezia from source on Ubuntu 22.04/glibc 2.35.
+Публичная публикация дистрибутива Amnezia VPN `4.8.12.8`, пересобранного на GitHub Actions `ubuntu-22.04` для совместимости с Ubuntu 22.04 / glibc 2.35.
 
 ## Source verification
 
 - Upstream repository: <https://github.com/amnezia-vpn/amnezia-client/tree/4.8.12.8>
 - Git tag: `4.8.12.8`
-- Commit verified locally: `b591dd744558532bad8f4a8fa1f58221dcf2973a`
+- Commit verified locally/upstream: `b591dd744558532bad8f4a8fa1f58221dcf2973a`
 - Version field verified in `CMakeLists.txt`: `set(AMNEZIAVPN_VERSION 4.8.12.8)`
+- Build runner: GitHub Actions `ubuntu-22.04`
+- Compatibility gate: `objdump -p deploy/AppDir/service/bin/AmneziaVPN-service` contains no GLIBC symbols newer than `GLIBC_2.35`.
 
 ## Artifact
 
 Скачайте файл из GitHub Release:
 
-- `AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64_distribution.zip`
+- `AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64.tar.zip`
 
 Содержимое ZIP:
 
-- `AmneziaVPN_Linux_Installer.bin` — Qt Installer Framework Linux x64 installer
-- `SHA256SUMS` — checksum installer file
-- `README_UBUNTU_22.04_RU.txt` — локальная инструкция установки
+- `AmneziaVPN_Linux_Installer.tar`
+  - `AmneziaVPN_Linux_Installer.bin` — Qt Installer Framework Linux x64 installer
 
-## Install / compatibility
+## Install on Ubuntu 22.04 x86_64
 
 ```bash
-unzip -t AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64_distribution.zip
-unzip AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64_distribution.zip
-sha256sum -c SHA256SUMS
+unzip -t AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64.tar.zip
+unzip AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64.tar.zip
+tar -xf AmneziaVPN_Linux_Installer.tar
 chmod +x AmneziaVPN_Linux_Installer.bin
 sudo ./AmneziaVPN_Linux_Installer.bin
 ```
@@ -42,18 +41,13 @@ sudo apt-get install -y libxkbcommon-x11-0
 
 ## Checksums
 
-Full distribution ZIP:
-
 ```text
-b0e3d3399f394bfa2988bbb207f141fd1cf6edc78e89bcc2b9404a6ce66c8281  AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64_distribution.zip
+bb90aa96b9b2c680f8344a246c8d1446cc14bae26a68d481b36ff15dafcbffcc  AmneziaVPN_4.8.12.8_Ubuntu_22.04_x64.tar.zip
+0a6d6ac0f3e6f5a186fd25375b7f407988c6eea6ee9831f54894b2cfb10c91b4  AmneziaVPN_Linux_Installer.bin
+78f91df41a1fa2f343d2d641b72350371f00b8c105c7d41f2b050b1a10224d17  AmneziaVPN-service
 ```
 
-Installer inside ZIP:
+## Build evidence
 
-```text
-6990efcb2939af4a87b473feeab2240df581efebe5270a6f16dff38f05a3ab7b  AmneziaVPN_Linux_Installer.bin
-```
-
-## Notes
-
-This repository is a convenience distribution mirror for a specific Amnezia VPN release artifact and installation notes. Amnezia VPN source code belongs to the upstream project linked above.
+- Workflow: `.github/workflows/build-ubuntu2204.yml`
+- Successful run: <https://github.com/Mikhail2018/amnezia-vpn-4.8.12.8-ubuntu22.04-dist/actions/runs/28608940059>
